@@ -1,0 +1,118 @@
+
+
+
+Particle Filter
+Adam Lee Perelman
+Linear Estimation in Dynamic Systems
+Ben-Gurion University 
+
+Abstract
+Introduction
+Optimal Filtering
+Kalman Filtering
+Importance Sampling 
+Sequential Importance Sampling (SIS)
+Degeneracy problem 
+Resampling
+Sampling importance resampling (SIR)
+Applied Simulation and results
+Gaussian Particle Filter (GPF)  and comparison 
+Conclusion
+Reference
+
+Abstract- Stochastic filtering theory was first introduced in the 1940s due to the pioneering work by Norbert Wiener and Andrey N. Kolmogorov and peaked in 1960 with the publication of the classic Kalman filter. Many problems in science require estimation of the state of a system, it is necessary to model the system and receive system feedback that changes over time with a sequence of noisy measurements. The state-space approach to modeling time-series focuses attention on the state vector of a system. The state vector contains information required to describe the system. For example, in tracking problems, this information could be related to the kinematic characteristics of the target. Alternatively, in econometrics, it could be related to monetary flow, interest rates, inflation, etc. 
+Introduction- Particle filtering is a general Monte Carlo (sampling) method for performing inference in state-space models where information about the state is acquired via noisy measurements at each time step. If our problem is linear and Gaussian than the Kalman Filter is the "exact solution to the right problem", however, if the problem is non-linear non-Gaussian the Extended Kalman Filter and the Unscented Kalman Filter are the "exact solution to the wrong problem" while the Particle Filter is the "approximate solution to the right problem".
+In a general discrete-time state-space model, the state of a system evolves according to: 
+Eq.[1] x_(k+1)=f_k (x_k,w_k )
+Eq.[2] z_k=h_k (x_k,v_k)
+where x_k is a vector representing the state of the system at time k, w_k   is the state noise vector, f_k is a possibly non-linear and time-dependent transition function. h_k is a possibly non-linear and time-dependent measurement function and v_k is the measurement noise vector. Information about x_k is obtained only through noisy measurements of it, z_k and the state vector x_(k+1) is assumed to be latent or unobservable.
+Optimal filtering- The filtering problem involves the estimation of the state vector at time k, given all the measurements up to and including time k, which we denote by  Z_k. For a Bayesian case, this problem can be formalized as the computation of the distribution  P(x_k |Z_k), which can be done recursively in two steps: 
+In the prediction step, where P(x_k |Z_(k-1)) (which is the prior over x_k ) is computed from the filtering distribution P(x_(k-1) |Z_(k-1)) at time k – 1: 
+Eq.[3] P(x_k│Z_(k-1) )=∫▒〖P(x_k│x_(k-1) )P(x_(k-1)│Z_(k-1) ) 〗 dx_(k-1)
+where P(x_(k-1) |Z_(k-1)) is known due to recursion and P(x_k |x_(k-1)) is given by Eq 1. 
+In the update step, the prior is updated with the new measurement  z_k using the Bayes’ rule to obtain the posterior over x_k:
+Eq.[4] P(x_k |Z_k)∝P(Z_k |x_k)P(x_k |Z_(k-1))
+In general, the computations in the prediction and update steps (Eq 3,4) are not analytically tractable. hence the need for approximate methods such as Monte Carlo sampling. 
+The Kalman filter- If the filtering distribution at time k − 1, P(x_(k-1) |Z_(k-1)), is Gaussian, the filtering distribution at the next time step, P(x_k |Z_k) is also Gaussian if the state evolution fk and the state measurement hk are linear. And in addition, the state noise w_k and the measurement noise v_k are Gaussian. Hence, the state-space model  is reduced to the following forms:
+Eq.[5] x_(k+1)=F_k x_k+w_k
+Eq.[6] z_k=H_k x_k+v_k
+In this linear Gaussian case the prediction and update equations leads to the well-known Kalman filter algorithm. However, these assumptions are improper for many systems, as they are non-linear, non-Gaussian. In the non-linear systems, one can implement the Extended Kalman Filter (EKF) or the Unscented Kalman Filter (UKF). 
+Importance sampling- which is an approximation method and not sampling as the name suggest (the sampling based method is called the rejection method), is used when it is difficult to sample directly from the target distribution itself, but much easier to sample from the proposal distribution. In other words, one approximates a target distribution p(x), using samples drawn from a proposal distribution q(x). Importance sampling is used to compensate for the difference between the target and proposal distributions. 
+In order to develop the details of the algorithm, let {X_k^i,w_k^i} denote a random measure that characterizes the posterior pdf P(X_k |Z_k). Where {X_k^i,i=1:N} is a set of sample points with associated weights {w_k^i,i=1:N}  and X_k={x_j,j=1:k} is a set of all states up to time k. The weights are normalized such that 
+Eq.[7] w_k^i=(w_k^i)/(∑_i^N▒w_k^i )  ∴∑_i^N▒w_k^i =1,∀k  
+Suppose it is difficult to draw samples from (X_k |Z_k) , but we can easily generate samples X_k^i~q(X_K |Z_K ),i=1:N from a proposal distribution. q(X_K |Z_K ) is called the importance density. Then the weight for the ith sample is.
+Eq.[8] w_k^i∝p(X_K |Z_K )/q(X_K |Z_K ) 
+Therefore, the discrete weighted posterior density at k can be approximated as 
+Eq.[9] P(X_k |Z_k)≈∑_i^N▒〖w_k^i δ(X_k-X_k^i)〗
+Sequential importance sampling (SIS)- Sequential importance sampling (SIS) is the most basic Monte Carlo method used for this purpose. This sequential MC (SMC) approach is also known as bootstrap filtering. It is a technique for implementing a recursive Bayesian filter by MC simulations. 	
+The idea is to represent the required posterior distribution P(X_(k-1) |Z_(k-1)) (rather than the filtering distribution, P(x_(k-1) |Z_(k-1)), which is the marginal of the full posterior distribution with respect to x_(k-1)),by a set of random samples with associated weights {X_(k-1)^i,w_(k-1)^i} ,also called particles, and recursively update these particles to approximate the posterior distribution at the next time step P(x_k |Z_k) .As N tends to infinity, this MC characterization becomes the equivalent representation of the true posterior function, and the SIS filter approaches the optimal Bayesian estimate[3]. We assume that the proposal distribution at time k can be factorized as follows
+Eq.[10] q(X_k│Z_k )=q(x_k│〖X_(k-1,) Z〗_k )q(X_(k-1)│Z_(k-1) )
+Now by augmenting each of the samples X_(k-1)^i~q(X_(k-1) |Z_(k-1) ) with the new state x_k^i~q(x_k |X_(k-1) 〖,Z〗_(k-1) ), we can obtain the samples at time k, X_k^i~q(X_k |Z_k ) with weights as in eq.[8]. To derive the recursive weight recall that 
+Eq.[11] P(X_k│Z_k )=(P(z_k│x_k )P(x_k│x_(k-1) )P(X_(k-1)│Z_(k-1) ))/(P(z_k│Z_(k-1) ) )
+By substituting eq.[10] and eq.[11] into eq.[8] and assume q(x_k│X_(k-1) )=q(x_k│x_(k-1) ) one get the recursive weight eq.[12] .
+Eq.[12] w_k^i=w_(k-1)^i  (P(z_k│x_k^i )P(x_k^i│x_(k-1)^i ))/(q(x_k^i│〖x_(k-1)^i,Z〗_k )P(z_k│Z_(k-1) ) )
+The SIS algorithm therefore consists of recursive propagation of the weights and the samples as each measurement is received sequentially by the algorithm[1].
+For i=1:N
+Draw x_k^i~q(x_k |〖x_(k-1,)^i z〗_k ),i=1:N
+Assign a weight w_k^i to the particle x_k^i according to eq [12]
+End for
+Normalize  w_k^i=(w_k^i)/(∑_i^N▒w_k^i )  ∀i 
+as N→∞ the approximation approach the true posterior, however, it is unfeasible to have an infinite number of particles, and it is difficult to analytically prove what the optimal number of particles is. Thus, one can choose the number of particles based on time and memory available.
+Degeneracy problem- A common problem with the SIS particle filter is the degeneracy problem. In practice, the algorithm proposed above, leads to particle depletion. That is, a few particles with significant weight, and negligible weight to all the others. This implies that a large computational effort is devoted to updating particles whose contribution to the approximation posterior is almost zero. 
+Degeneracy is measured by the effective sample size defined as:
+Eq.[13] N_eff=1/(∑_(i=1)^N▒〖(w_k^i)〗^2 )
+ 
+Resampling- one way to deal with degeneracy is by using a very large N, However this is impractical. The second method to reduce the degeneracy effect is to use resampling whenever a significant degeneracy is observed. Notice that N_eff<N, where small N_eff indicated degeneracy. 
+In resampling, one draws a new set of N particles from the discrete approximation whenever N_eff fall below some certain threshold N_τ, and assign them equal weights of 1/N. Thus, the resampling process deals with degeneracy eliminating the particles with insignificant weights. This, however, introduces a new problem, called the sample impoverishment problem. The diversity of the particles will tend to decrease after a resampling step. Because particles with large weights are likely to be drawn multiple times during resampling, whereas particles with small weights are not likely to be drawn at all. 
+Sampling importance resampling (SIR) algorithm-The SIR algorithm can be seen as a variant of SIS where the proposal distribution is chosen to be the state transition distribution p(x_k |x_(k-1)^i ) where, x_k^i~p(x_k |x_(k-1)^i ) is generated by sampling the process noise v_(k-1)^i~g(v_(k-1) ) and setting x_k^i=f_k (x_(k-1)^i,v_(k-1)^i). Moreover, resampling is applied at every time index. Thus, w_(k-1)^i=N^(-1)  ∀i  therefore w_k^i=1/N  p(z_k |x_(k-1)^i )/(p(z_k│Z_(k-1) ) )   (the weights are then normalized by eq [7] to give w_k^i∝ p(z_k |x_(k-1)^i )| ∑_i^N▒w_k^i =1).
+The SIR algorithm thus consists of recursive propagation of the particles as each measurement is received and resampling sequentially at every level by the algorithm[2].
+ 
+
+Initialize x_0^i~p(x_0 ) 
+set w_k^i=□(1/N)  ∀i
+For i=1:N
+Draw x_k^i~p(x_k |x_(k-1)^i )
+Calculate w_k^i= p(z_k |x_(k-1)^i )
+End for
+Normalize  w_k^i=(w_k^i)/(∑_i^N▒w_k^i )  ∀i
+Construct cdf W_k for 〖{w〗_k^i} 
+For j=1:N
+Draw ξ~U(0,1) 
+i=max (find (W_k≤ξ))
+x_k^j=x_k^i
+End for
+Reset  w_k^i=□(1/N)  ∀i
+
+Simulation and results
+We have simulated, using the algorithm [2] given above, both a Particle Filter and the Extended Kalman Filter. We will demonstrate the difference between the two filters and between different numbers of particles on a non-linear system. 
+Consider the following one dimensional non-linear model. (Univariate Non stationary Growth Model UNGM):
+Eq.[14] x_(k+1)=0.5x_k+(25x_k)/(1+x_k^2 )+8 cos⁡(1.2(k-1))+w_k
+Eq.[15] z_k=(x_k^2)/20+ v_k
+Where, w_k  and v_k are white noises with variance of 1. The initial position at x_0=0.1 and variance of 1. The number of time steps for all simulations is 100.
+   
+
+   
+
+The number of particles chosen are 1,10,100 and 1000 ,their total run time and total MSE for 50 iterations are (0.20 s, 5180.2),( 0.35 s, 2159.4),( 1.96 s, 651.3) and  (35.8 s, 501.6) seconds respectively Fig[5]. 
+As expected, when the number of particles increases so is the filter accuracy. Because a large amount of the computation power is invested in the resampling stage we can see a great increase of computational time between N=100 and N=1000.However, improvement of the estimate is not much better. Due to that, we will chose the N=100 particles filter for comparison with the Extended Kalman Filter.
+  
+
+One can notice the superiority of the particle filter over the extended Kalman filter for this highly nonlinear system with its total run time and total MSE for 50 iterations (0.62 s, 8239.9) respectively. However, the computation time required for this particle filter algorithm is quite expensive Fig[7]. 
+Gaussian Particle Filter (GPF)  and comparison
+There are other methods for optimizing the algorithm of the Particle Filter. while, re-sampling, regularized sampling and auxiliary sampling are techniques add to the SIS in order to solve the degeneracy problem, impoverishment problem and calculation time. There are other types of improved particle filters all together; one of them is the Gaussian particle filter, which manipulates the assumptions of Gaussian distribution to its advantage. That is, if the Gaussian assumption holds we can waiver the resampling stage [4] .
+The figure below shows the GPF estimation for the Univariate Non-stationary Growth Model eq[14],[15]. For comparison, recall our Matlab simulation for the EKF estimation fig [6]. One can easily see that the estimation provided by the GPF is much better than the EKF. The estimation is as good as the estimation of the SIR with the same number of particles but much faster. 
+   
+
+Figure [9] shows a performance comparison of 4 different filters: EKF, UKF, GPF, and SIR filter of 50 cycles for average MSE and computation time (per cycle).
+One can see a clear performance to computation time tradeoff for the two KF and the two PF. In addition, although there is not much performance difference between the SIR and the GPF, there is a significant improvement in computation time. That is, as the number of particle increases the superiority of the GPF over the SIR is accountable.
+Conclusion
+Using Bayesian filter methods and Monte Carlo Simulation the Particle Filter variants approximates the posterior distribution by a weighted set of samples (or particles) which are propagated through the dynamic system using importance sampling and provide optimal results for the non-linear non-Gaussian case. As opposed to the various Kalman filters, there are no restrictions on the transition function, f_k measurement function h_k, or on the distribution of the system or measurement noise and convergence is always met.
+The computational complexity poses a major disadvantage for the particle filters. Although there are various methods to reduce the computational complexity a tradeoff with estimation precision is still a significant factor.
+
+References
+[1] Gordon. N. Salmond. D., and Smith, Novel approach to nonlinear/non-Gaussian                       Bayesian state estimation, 1993,
+[2] Dan Simon, Optimal State Estimation, Kalman, Hinf, and Nonlinear Approaches,p461-480, 2006.
+[3] Arulampalam, M.S., Maskell, S., Gordon, N. & Clapp, T. (2002). A tutorial on particle filters for online nonlinear/non-gaussian Bayesian tracking. IEEE Transactions on Signal Processing. 50(2):174-188 
+[4] Kotecha J.H and Djuric P.M, Gaussian Particle Filtering, IEEE transactions on signal processing, 2003. 
+[5] R. van der Merwe,A. Doucet, Freitas N. Eric W. The Uncented Particle filter (2006) UC Berkeley.
+
